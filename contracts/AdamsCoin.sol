@@ -9,6 +9,14 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 
 /**
+ Sat Jun 25 14:23
+ AdamsCoin deployed to: 0xF122D843512bf2506e52f64a4bF6af12A9677Eda
+AdamsVault deployed to: 0x8D721e9a6687433F88929A23F4295581b7b7D0d4
+AdamsStaking deployed to: 0xb49382Eb42dEf1c991A9a45aB0f2881bEcfa5E1F
+AdamsSwap deployed to: 0x36642552D9eCd1c679c0079C5EFBDCc9749B8550
+ */
+
+/**
  * @title A crypto currency inspired by the writings of Douglas Adams
  * @author Luke Cassady-Dorion
  * @dev This is part of a project I built to teach myself Solidity and React.
@@ -28,9 +36,10 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
     // Just to be clear, tokens owend by AdamsVault and AdamsStaking are NOT included.
     uint256 private _totalCirculation = 0;
 
-    // addresses of our vault and staking contracts
+    // addresses of our vault, staking and swap contracts
     address private _vaultAddress;
     address private _stakingAddress;
+    address private _swapAddress;
 
     // Tracks true ownership of tokens. This covers the case where a user stakes their ADAMS. 
     // As this changes ownership from the user's wallet to the staking contract, it would then
@@ -84,20 +93,70 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
     }
 
     /**
-     * TODO: I think this is only called for 3rd party transfers, which don't need to be taxed.
-     * Which means I don't need to override. BUT, I'm leaving it here with my comment as
-     * I'm not totally sure and want to be reminded of this
+     * @notice Sets the address of our swap contract
+     * @dev We track this address as we don't want coins owned by the swap contract to be eligable for rewards.
+     * Also this allows us to continue issuing rewards to people who have staked their coins.
+     # @param swapAddress The address of the staking contract
+     */
+    function setSwapAddress(address swapAddress) public onlyOwner {
+        _swapAddress = swapAddress;
+    }
+
+    /**
+     * @notice Transfers tokens while also taxing that trasnfer 42% and distributing that tax to a random holder
+     * @dev This is called for 3rd party transfers, those that have been authorized with an approve
+     * transaction first. 
+     *
+     * Since this will be called by the AdamsSwap contract, it's the main place we handle taxation.
      */
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
-        return super.transferFrom(from, to, amount);
+      // if we are transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
+        if( (to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress)) {
+            return super.transferFrom(from, to, amount);       
+        }
+
+        // if the staking contract or vault contract are the sender, this is a tax free transfer
+        if( (from == _vaultAddress) || (from == _stakingAddress)) {
+            return super.transferFrom(from, to, amount);       
+        }
+
+        // if "to" != contract owner, see if they have an entry in rewards mapping
+        if( to != owner() ) {
+            // add to the array of address holders
+            _checkAndAddToHolderArray(to);
+        }
+        // tax 42%
+        uint256 tax = amount.mul(42).div(100);
+
+        // first do the transfer, this allows the current tx
+        // to be elgible for winning. technically it's possible to win
+        // one's own taxes back.
+        if( super.transferFrom(from, to, amount.sub(tax)) ) {
+            // then distribute the tax
+            _distributeTax(tax, to);
+
+            // then increase circulation
+            _totalCirculation = _totalCirculation.add(amount.sub(tax));
+
+            // then update our parallel ledger
+            uint256 fromBalance = _unstakedBalances[from];
+            unchecked {
+                _unstakedBalances[from] = fromBalance - amount;
+            }
+            _unstakedBalances[to] += amount;
+
+            return true;
+        }
+        return false;
+
     }
 
     /**
      * @notice Transfers tokens while also taxing that trasnfer 42% and distributing that tax to a random holder
      */
     function transfer(address to, uint256 amount) public override returns (bool) {
-        // if we are transferring to _vaultAddress or _stakingAddress, this is a tax free transfer
-        if( (to == _vaultAddress) || (to == _stakingAddress)) {
+        // if we are transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
+        if( (to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress)) {
             return super.transfer(to, amount);       
         }
 
@@ -129,7 +188,7 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
             unchecked {
                 _unstakedBalances[msg.sender] = fromBalance - amount;
             }
-                _unstakedBalances[to] += amount;
+            _unstakedBalances[to] += amount;
 
             return true;
         }

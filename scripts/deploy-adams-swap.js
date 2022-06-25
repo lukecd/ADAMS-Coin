@@ -1,6 +1,4 @@
-
 const hre = require("hardhat");
-
 
 async function main() {
   const [owner, vaultClaimer, tranferRecipient1, tranferRecipient2, tranferRecipient3] = await hre.ethers.getSigners();
@@ -25,6 +23,13 @@ async function main() {
   console.log("Vault address set inside AdamsCoin");
   await adamsCoin.connect(owner).setStakingAddress(adamsStaking.address);
   console.log("Staking address set inside AdamsCoin");
+
+  // create our temp SwapCoin (on deploy we'll use Goerli ETH)
+  const SwapCoin = await hre.ethers.getContractFactory("SwapCoin");
+  const swapCoin = await SwapCoin.deploy();
+  await swapCoin.deployed();
+  console.log("SwapCoin deployed to:", swapCoin.address); 
+
 
 }
 

@@ -1,14 +1,29 @@
-# ADAMS-Coin
-If "42" is the answer to the “ultimate question of life, the universe, and everything,
-then perhaps the question is "what random and unexpected thing will happen to me today?".
-In the spirit of Life, The Universe and Everything, here is Adams coin.
+# ADAMSCoin / ADAMSExchange / 42!
 
-Each token transfer is taxed 42% and then that tax is randomly given to one account holder.
-The more you hold and the longer you hold, the greater your chance of tax windfalls is.
-Tax distribution is done according to these rules
+### 
+This is the repository for the Smart Contracts for ADAMS Exchange. The UI is here https://github.com/lukecd/ADAMS-Exchange
 
-1. The contract owner can never win
-2. 10 % of the time, there is a non-weighted distribution. Meaning each wallet has an equal chance of winning, regardless of their token balance. This is done to increase the randomness and help out new account holders. In the case of weighted distribution, it's possible whales will almost always win, thus exponentially increasing their chance of future winning. I don't actually know if 10% is the right percentage to allocate to this chance, it would be worth experimenting some.
-3. 90% of the time there is a weighted distribution. Each token owned increases your chance of winning.  
+This project started out with me imaginging a token that would appeal to gamblers. I came up with the idea of
+taxing every transfer and then giving that tax randomally to a wallet holder. Giving tax rewards away to holders
+would incentivize HODLing, and then to make sure whales don't always win, I decided distribute tax
+rewards as follows.
+    <ol>
+        <li>The contract owner can never win.</li>
+        <li>10 % of the time, there is a non-weighted distribution. Each wallet has an equal chance of winning, regardless of their token balance.</li>
+        <li>90% of the time there is a weighted distribution. Each token owned increases your chance of winning.</li>
+    </ol>
+Lots more details on how that's handled in the ADAMS Coin Repository.
 
-Now, I don't actually think this contract would be accepted by DEXes due to how I've implemented taxing on transfers. That said, it was a fun coding exercise and a fun thought experiment of how to create tokenomics that would appeal to people's love of mild gambling.
+# AdamsCoin
+
+# AdamsVault
+
+# AdamsStaking
+- r2w3
+- interest
+
+# AdamsSwap
+Learnweb3dao
+
+
+
