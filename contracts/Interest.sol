@@ -13,7 +13,7 @@ import "./DSMath.sol";
 * continuously compounding interest by calculating discretely compounded
 * interest compounded every second.
 */
-contract Interest is DSMath {
+library Interest {
 
     //// Fixed point scale factors
     // wei -> the base unit
@@ -23,12 +23,12 @@ contract Interest is DSMath {
 
     // Go from wad (10**18) to ray (10**27)
     function wadToRay(uint _wad) internal pure returns (uint) {
-        return mul(_wad, 10 ** 9);
+        return DSMath.mul(_wad, 10 ** 9);
     }
 
     // Go from wei to ray (10**27)
     function weiToRay(uint _wei) internal pure returns (uint) {
-        return mul(_wei, 10 ** 27);
+        return DSMath.mul(_wei, 10 ** 27);
     } 
 
 
@@ -61,7 +61,7 @@ contract Interest is DSMath {
     *   interest accrued
     */
     function accrueInterest(uint _principal, uint _rate, uint _age) external pure returns (uint) {
-        return rmul(_principal, rpow(_rate, _age));
+        return DSMath.rmul(_principal, DSMath.rpow(_rate, _age));
     }
 
 
@@ -77,6 +77,6 @@ contract Interest is DSMath {
     * @return 1 * 10 ** 27 + Effective Interest Rate Per Second * 10 ** 27
     */
     function yearlyRateToRay(uint _rateWad) external pure returns (uint) {
-        return add(wadToRay(1 ether), rdiv(wadToRay(_rateWad), weiToRay(365*86400)));
+        return DSMath.add(wadToRay(1 ether), DSMath.rdiv(wadToRay(_rateWad), weiToRay(365*86400)));
     }
 }

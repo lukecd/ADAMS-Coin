@@ -17,14 +17,15 @@ async function transferToVault() {
     const [owner] = await hre.ethers.getSigners();
     // approve vault contract to access msg.sender's tokens
 
-    const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0x87e128c6cD8Ffa3d8409187DE25CaBCaac1e2EF5');
+    const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0xF122D843512bf2506e52f64a4bF6af12A9677Eda');
     console.log("AdamsCoin connected to:", adamsCoin.address);
-    const adamsVault = await hre.ethers.getContractAt("AdamsVault", '0x63FA0442f5BD8907bFcc1732F15E0fbdcC96Bc7b');
+    const adamsVault = await hre.ethers.getContractAt("AdamsVault", '0x74F4c8606e3c07bcB2C53f700f50eBB03268a939');
     console.log("AdamsVault connected to:", adamsVault.address);
 
     let amountToTransfer = hre.ethers.utils.parseEther("1000000");
     adamsCoin.connect(owner).approve(adamsVault.address, amountToTransfer);
-  
+    console.log("approved transfer");
+    
     // transfer 1,000,000 tokens to the AdamsVault
     adamsVault.connect(owner).deposit(amountToTransfer);
 
@@ -111,8 +112,8 @@ async function main() {
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
-main()
-//transferToVault()
+//main()
+transferToVault()
 //deployOnly()
   .then(() => process.exit(0))
   .catch((error) => {
@@ -120,9 +121,3 @@ main()
     process.exit(1);
   });
 
-
-  /**
-   * 
-   * AdamsCoin deployed to: 0x87e128c6cD8Ffa3d8409187DE25CaBCaac1e2EF5
-AdamsVault deployed to: 0xa20e128fFec6F8A59eF0C507901855cE9dB4279B
-   */

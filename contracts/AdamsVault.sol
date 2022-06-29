@@ -24,6 +24,9 @@ contract AdamsVault is Ownable {
     // mapping listing addresses and how much they have claimed
     mapping (address => uint) public transferRecipients; 
 
+    // emitted on successful vault distributions
+    event VaultDistribution(address distributionAddress, uint amount);
+
     constructor(address adamsAddress) {
         token = IERC20(adamsAddress);
     }
@@ -56,13 +59,15 @@ contract AdamsVault is Ownable {
      */
     function claimDistribution() public {
         uint claimedRewards = transferRecipients[msg.sender];
-        require(claimedRewards == 0, "Don't be gready. You already got yours");
+        require(claimedRewards == 0, "Didn't I already give you some?");
         uint balance = token.balanceOf(address(this));
         require(balance > 0, "Hey, I'm out of ADAMS now, sorry. Can you come back later?:(");
 
         transferRecipients[msg.sender] = 4200 * (10 ** 18);
         //token.transferFrom(address(this), msg.sender, 4200);
         token.transfer(msg.sender, 4200 * (10 ** 18));
+        // send an event 
+        emit VaultDistribution(msg.sender, 4200);
     }
 
     /**
@@ -73,5 +78,12 @@ contract AdamsVault is Ownable {
     function hasClaimedDistribution() public view returns(bool) {
         uint claimedRewards = transferRecipients[msg.sender];
         return (claimedRewards > 0); 
+    }
+
+    /**
+    * @notice Returns the amount AdamsCoin tokens held by the contract
+    */
+    function getReserve() public view returns (uint) {
+        return token.balanceOf(address(this));
     }
 }

@@ -4,7 +4,7 @@ const hre = require("hardhat");
 /**
  * Simple script to check balances of our contracts
  * AdamsCoin deployed to: 0xF122D843512bf2506e52f64a4bF6af12A9677Eda
- * AdamsVault deployed to: 0x8D721e9a6687433F88929A23F4295581b7b7D0d4
+ * AdamsVault deployed to: 0x74F4c8606e3c07bcB2C53f700f50eBB03268a939
  * AdamsStaking deployed to: 0xb49382Eb42dEf1c991A9a45aB0f2881bEcfa5E1F
  * AdamsSwap deployed to: 0x36642552D9eCd1c679c0079C5EFBDCc9749B8550
  */
@@ -17,7 +17,7 @@ async function main() {
     console.log("AdamsCoin connected to:", adamsCoin.address);
     const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0x36642552D9eCd1c679c0079C5EFBDCc9749B8550');
     console.log("AdamsSwap connected to:", adamsSwap.address);
-    const adamsVault = await hre.ethers.getContractAt("AdamsVault", '0x8D721e9a6687433F88929A23F4295581b7b7D0d4');
+    const adamsVault = await hre.ethers.getContractAt("AdamsVault", '0x74F4c8606e3c07bcB2C53f700f50eBB03268a939');
     console.log("AdamsVault connected to:", adamsVault.address);
     const adamsStaking = await hre.ethers.getContractAt("AdamsStaking", '0xb49382Eb42dEf1c991A9a45aB0f2881bEcfa5E1F');
     console.log("AdamsStaking connected to:", adamsStaking.address);

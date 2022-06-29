@@ -1,7 +1,5 @@
 
 const hre = require("hardhat");
-const dev1Wallet = '0x125480d196cb351B91C29E47Dc45e0205fE37AEE';
-const dev2Wallet = '0xcb082454a4D41cc44F031600A5F3bc00Ae66Fc6f';
 
 async function main() {
     const [owner] = await hre.ethers.getSigners();
