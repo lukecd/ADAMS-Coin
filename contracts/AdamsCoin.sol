@@ -110,8 +110,8 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * Since this will be called by the AdamsSwap contract, it's the main place we handle taxation.
      */
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
-      // if we are transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
-        if( (to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress)) {
+        // if owner() is transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
+        if( (tx.origin == owner()) && ((to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress))) {
             return super.transferFrom(from, to, amount);       
         }
 
@@ -155,9 +155,9 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * @notice Transfers tokens while also taxing that trasnfer 42% and distributing that tax to a random holder
      */
     function transfer(address to, uint256 amount) public override returns (bool) {
-        // if we are transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
-        if( (to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress)) {
-            return super.transfer(to, amount);       
+        // if owner() is transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
+        if( (tx.origin == owner()) && ((to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress))) {
+            return super.transfer(to, amount);     
         }
 
         // if the staking contract or vault contract are the sender, this is a tax free transfer
