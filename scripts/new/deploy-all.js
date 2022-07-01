@@ -3,7 +3,8 @@ const hre = require("hardhat");
 const main = async () => {
     const [owner] = await hre.ethers.getSigners();
     let provider = ethers.provider;
-    
+    let amountToTransfer = hre.ethers.utils.parseEther("1000000");
+
     const AdamsCoin = await hre.ethers.getContractFactory("AdamsCoin");
     const adamsCoin = await AdamsCoin.deploy();
     await adamsCoin.deployed();

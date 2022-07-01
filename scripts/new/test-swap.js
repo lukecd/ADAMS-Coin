@@ -2,7 +2,8 @@ const hre = require("hardhat");
 
 async function main() {
     const [owner, p1, p2, p3, p4, p5, p6, p7, p8, p9] = await hre.ethers.getSigners();
-    const swappers = [p1, p2, p3, p4, p5, p6, p7, p8, p9];
+    //const swappers = [p1, p2, p3, p4, p5, p6, p7, p8, p9];
+    const swappers = [p1, p2];
     let amountToTransfer = hre.ethers.utils.parseEther("1000000");
 
     const AdamsCoin = await hre.ethers.getContractFactory("AdamsCoin");
@@ -77,17 +78,19 @@ async function main() {
         // format them to make easier to read
         inputAmountFormatted = hre.ethers.utils.formatEther(inputAmount);
         amountOfTokensFormatted = hre.ethers.utils.formatEther(amountOfTokens);
-        console.log(`Swapping ${inputAmountFormatted} ADAMS will get you ${amountOfTokensFormatted} GOR`);  
         
         // STEP 2: APPROVE
         // Since this is ADAMS to GOR, we need to approve the contract to access our ADAMS first
         await adamsCoin.connect(swappers[i]).approve(adamsSwap.address, inputAmount);
 
         // STEP 3: SWAP
+        let swapperBalance = await ethers.provider.getBalance(swappers[i].address);
+        swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
+        console.log(`Pre swap ${swappers[i].address} has ${swapperBalance} GOR`); 
         await adamsSwap.connect(swappers[i]).adamsToEth(inputAmount, amountOfTokens);
 
         // STEP 4: Check balance
-        let swapperBalance = await ethers.provider.getBalance(swappers[i].address);
+        swapperBalance = await ethers.provider.getBalance(swappers[i].address);
         swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
         console.log(`Post swap ${swappers[i].address} has ${swapperBalance} GOR`);  
     }

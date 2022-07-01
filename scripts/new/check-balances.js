@@ -3,23 +3,23 @@ const hre = require("hardhat");
 
 /**
  * Simple script to check balances of our contracts
- * AdamsCoin deployed to: 0xF122D843512bf2506e52f64a4bF6af12A9677Eda
- * AdamsVault deployed to: 0x74F4c8606e3c07bcB2C53f700f50eBB03268a939
- * AdamsStaking deployed to: 0xb49382Eb42dEf1c991A9a45aB0f2881bEcfa5E1F
- * AdamsSwap deployed to: 0x36642552D9eCd1c679c0079C5EFBDCc9749B8550
+AdamsCoin deployed to: 0xb37C634bB7877Ce22c729Ff37075Eb18F42879f9
+AdamsVault deployed to: 0x725e78299d62bf230FD6BC3e0324C67119b6B503
+AdamsStaking deployed to: 0x3ab6FcF1B4A87Dd246d6f75D6594B77EAA1fcAAC
+AdamsSwap deployed to: 0xC2A2150219148bC394cAA81Dc3e1e80e20c116Bc
  */
 async function main() {
     const [owner] = await hre.ethers.getSigners();
     let provider = ethers.provider;
     let amountToTransfer = hre.ethers.utils.parseEther("1000000");
 
-    const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0xF122D843512bf2506e52f64a4bF6af12A9677Eda');
+    const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0xb37C634bB7877Ce22c729Ff37075Eb18F42879f9');
     console.log("AdamsCoin connected to:", adamsCoin.address);
-    const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0x36642552D9eCd1c679c0079C5EFBDCc9749B8550');
+    const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0xC2A2150219148bC394cAA81Dc3e1e80e20c116Bc');
     console.log("AdamsSwap connected to:", adamsSwap.address);
-    const adamsVault = await hre.ethers.getContractAt("AdamsVault", '0x74F4c8606e3c07bcB2C53f700f50eBB03268a939');
+    const adamsVault = await hre.ethers.getContractAt("AdamsVault", '0x725e78299d62bf230FD6BC3e0324C67119b6B503');
     console.log("AdamsVault connected to:", adamsVault.address);
-    const adamsStaking = await hre.ethers.getContractAt("AdamsStaking", '0xb49382Eb42dEf1c991A9a45aB0f2881bEcfa5E1F');
+    const adamsStaking = await hre.ethers.getContractAt("AdamsStaking", '0x3ab6FcF1B4A87Dd246d6f75D6594B77EAA1fcAAC');
     console.log("AdamsStaking connected to:", adamsStaking.address);
 
     let balance = await adamsCoin.connect(owner).balanceOf(adamsSwap.address);
