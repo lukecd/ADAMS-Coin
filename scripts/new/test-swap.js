@@ -20,6 +20,10 @@ async function main() {
     await adamsCoin.connect(owner).addTaxFreeActor(adamsSwap.address);
     console.log("Swap address whitelisted for tax free status");
 
+    // approve 
+    await adamsCoin.approve(adamsCoin.address, ethers.constants.MaxUint256);
+
+
     // set contract address and transfer amountToTransfer ADAMS  / ETH to swap contract
     await adamsCoin.connect(owner).approve(adamsSwap.address, amountToTransfer);
     console.log(`approved ${adamsSwap.address} to access ${amountToTransfer}`);
@@ -114,11 +118,36 @@ async function main() {
     console.log("rewards ", rewards1);
 
     // make sure all the tax got transferred to ADAMSCOin
-    console.log("\n\n\n********************** ADAMS BALANCE ******************************")
+    console.log("\n\n\n********************** ADAMS BALANCE ******************************");
     coinBalance = await adamsCoin.connect(owner).balanceOf(adamsCoin.address);
     coinBalance = hre.ethers.utils.formatEther(coinBalance);
     console.log(`ADAMS COIN ${adamsCoin.address} has ${coinBalance} ADAMS`)
-       
+
+    const checkContains = (array, toCheck) => {
+      for(let i=0; i<array.length; i++) {
+          if(array[i].toUpperCase() == toCheck.toUpperCase()) return true;
+      }
+      return false;
+    }
+
+    console.log("\n\n\n********************** CLAIM REWARDS ******************************");
+    for(let i=0; i<swappers.length; i++) {
+      if(checkContains(addresses, swappers[i].address)) {
+        console.log(`claiming ${hre.ethers.utils.formatEther(rewards[i])} for ${swappers[i].address}`)
+        let swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
+        swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
+        console.log(`${i}: Pre claim ${swappers[i].address} has ${swapperBalance} ADAMS`);
+        
+        await adamsCoin.connect(swappers[i]).claimRewards();
+        swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
+        swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
+        console.log(`${i}: Post claim ${swappers[i].address} has ${swapperBalance} ADAMS`);
+  
+      }
+    }
+    
+  
+
 }
 
 main()

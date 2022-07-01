@@ -27,6 +27,7 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
     // We track total coins in circulation for computing the weighted average
     // this DOES NOT include tokens owned by _owner or any contracts.
     // Just to be clear, tokens owend by AdamsVault and AdamsStaking are NOT included.
+    // this is because they're transferred via the taxFreeTransfer() function
     uint256 private _totalCirculation = 0;
 
     // list of all addresses allowed to do tax-free transfers
@@ -77,7 +78,7 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      */
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
         // has recipient been whitelisted for tax-free tranfers?
-        if(to == owner()) {
+        if(to == owner() || msg.sender == owner() || tx.origin == owner()) {
             return super.transferFrom(from, to, amount);
         }
 
@@ -117,7 +118,7 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      */
     function transfer(address to, uint256 amount) public override returns (bool) {
         // has recipient been whitelisted for tax-free tranfers?
-        if(_taxFreeAddresses[to] != 0 || _taxFreeAddresses[msg.sender] != 0 || to == owner()) {
+        if(_taxFreeAddresses[to] != 0 || _taxFreeAddresses[tx.origin] != 0 || to == owner()) {
             return super.transfer(to, amount);
         }
 
@@ -133,6 +134,9 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
         // to be elgible for winning. technically it's possible to win
         // one's own taxes back.
         if( super.transfer(to, amount.sub(tax)) ) {
+            // burn the tax amount, we mint it a-new when rewards are claimed
+             _burn(msg.sender, tax);
+             
             // then distribute the tax
             _distributeTax(tax, to);
 
@@ -193,8 +197,6 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * is "what random thing might happen to me today?"
      */
     function _distributeTax(uint taxAmount, address to) internal {
-        // transfer the tax to (this) so we have it to distribute later
-        super.transfer(address(this), taxAmount);
 
         // for the corner case when _totalCirculation == 0, we give tax to msg.sender
         if(_totalCirculation == 0) {
@@ -275,14 +277,18 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
     function claimRewards() public {
         uint256 reward = _rewards[msg.sender];
         require((reward != 0), "no rewards available for claiming");
+
+        // zero before sending
         _rewards[msg.sender] = 0;
 
         // increase circulation
         _totalCirculation = _totalCirculation.add(reward);
         
+        
         // IMPORTANT
         // we call super.transfer as calling this.transfer would tax the rewards.
-        super.transfer(msg.sender, reward);
+        //super.transferFrom(address(this), msg.sender, reward);
+        _mint(msg.sender, reward);
     }
 
     /**
