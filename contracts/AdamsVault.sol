@@ -56,6 +56,9 @@ contract AdamsVault is Ownable {
      * @notice Allows for each wallet to claim a total of 4200 ADAMS Coins
      * @dev The number of tokens available to claim is intentionally hard-coded. No
      * reason to waste gas creating a way to update it.
+     * We actually transfer 10,000 tokens, which after tax is 4200. 
+     * Originally I planned to allow this to be a tax-free transfer,
+     * but now I think it's more fun to have more rewards floating around.
      */
     function claimDistribution() public {
         uint claimedRewards = transferRecipients[msg.sender];
@@ -63,9 +66,10 @@ contract AdamsVault is Ownable {
         uint balance = token.balanceOf(address(this));
         require(balance > 0, "Hey, I'm out of ADAMS now, sorry. Can you come back later?:(");
 
-        transferRecipients[msg.sender] = 4200 * (10 ** 18);
+        // 724137931 / 6000
+        transferRecipients[msg.sender] = (724137932 / 100000) * (10 ** 18);
         //token.transferFrom(address(this), msg.sender, 4200);
-        token.transfer(msg.sender, 4200 * (10 ** 18));
+        token.transfer(msg.sender, (724137932 / 100000) * (10 ** 18));
         // send an event 
         emit VaultDistribution(msg.sender, 4200);
     }

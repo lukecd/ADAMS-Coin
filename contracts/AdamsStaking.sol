@@ -81,7 +81,7 @@ contract AdamsStaking is Ownable {
 
       }
     }
-
+console.log("AdamsStaking withdraw amountToTransfer", amountToTransfer);
     token.transfer(msg.sender, amountToTransfer);
 
     emit StateWithdrawal(msg.sender, amountToTransfer);

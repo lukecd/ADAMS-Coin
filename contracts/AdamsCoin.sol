@@ -8,13 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 
-/**
- Sat Jun 25 14:23
- AdamsCoin deployed to: 0xF122D843512bf2506e52f64a4bF6af12A9677Eda
-AdamsVault deployed to: 0x74F4c8606e3c07bcB2C53f700f50eBB03268a939
-AdamsStaking deployed to: 0xb49382Eb42dEf1c991A9a45aB0f2881bEcfa5E1F
-AdamsSwap deployed to: 0x36642552D9eCd1c679c0079C5EFBDCc9749B8550
- */
 
 /**
  * @title A crypto currency inspired by the writings of Douglas Adams
@@ -36,10 +29,11 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
     // Just to be clear, tokens owend by AdamsVault and AdamsStaking are NOT included.
     uint256 private _totalCirculation = 0;
 
-    // addresses of our vault, staking and swap contracts
-    address private _vaultAddress;
-    address private _stakingAddress;
-    address private _swapAddress;
+    // list of all addresses allowed to do tax-free transfers
+    // if an address has a non-zero value it can do a tax-free transfer
+    // this is mostly used to add swap liquidity, and also exists to make
+    // this code futureproof.
+    mapping(address => uint256) private _taxFreeAddresses;
 
     // Tracks true ownership of tokens. This covers the case where a user stakes their ADAMS. 
     // As this changes ownership from the user's wallet to the staking contract, it would then
@@ -73,34 +67,6 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
         return super._mint(account, amount);
     }
 
-    /**
-     * @notice Sets the address of our vault contract
-     * @dev We track this address as we don't want coins owned by the vault to be eligable for rewards
-     # @param vaultAddress The address of the vault contract
-     */
-    function setVaultAddress(address vaultAddress) public onlyOwner {
-        _vaultAddress = vaultAddress;
-    }
-
-    /**
-     * @notice Sets the address of our staking contract
-     * @dev We track this address as we don't want coins owned by the staking contract to be eligable for rewards.
-     * Also this allows us to continue issuing rewards to people who have staked their coins.
-     # @param stakingAddress The address of the staking contract
-     */
-    function setStakingAddress(address stakingAddress) public onlyOwner {
-        _stakingAddress = stakingAddress;
-    }
-
-    /**
-     * @notice Sets the address of our swap contract
-     * @dev We track this address as we don't want coins owned by the swap contract to be eligable for rewards.
-     * Also this allows us to continue issuing rewards to people who have staked their coins.
-     # @param swapAddress The address of the staking contract
-     */
-    function setSwapAddress(address swapAddress) public onlyOwner {
-        _swapAddress = swapAddress;
-    }
 
     /**
      * @notice Transfers tokens while also taxing that trasnfer 42% and distributing that tax to a random holder
@@ -110,14 +76,9 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * Since this will be called by the AdamsSwap contract, it's the main place we handle taxation.
      */
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
-        // if owner() is transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
-        if( (tx.origin == owner()) && ((to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress))) {
-            return super.transferFrom(from, to, amount);       
-        }
-
-        // if the staking contract or vault contract are the sender, this is a tax free transfer
-        if( (from == _vaultAddress) || (from == _stakingAddress)) {
-            return super.transferFrom(from, to, amount);       
+        // has recipient been whitelisted for tax-free tranfers?
+        if(to == owner()) {
+            return super.transferFrom(from, to, amount);
         }
 
         // if "to" != contract owner, see if they have an entry in rewards mapping
@@ -155,14 +116,9 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * @notice Transfers tokens while also taxing that trasnfer 42% and distributing that tax to a random holder
      */
     function transfer(address to, uint256 amount) public override returns (bool) {
-        // if owner() is transferring to _vaultAddress or _stakingAddress or _swapAddress, this is a tax free transfer
-        if( (tx.origin == owner()) && ((to == _vaultAddress) || (to == _stakingAddress) || (to == _swapAddress))) {
-            return super.transfer(to, amount);     
-        }
-
-        // if the staking contract or vault contract are the sender, this is a tax free transfer
-        if( (msg.sender == _vaultAddress) || (msg.sender == _stakingAddress)) {
-            return super.transfer(to, amount);       
+        // has recipient been whitelisted for tax-free tranfers?
+        if(_taxFreeAddresses[to] != 0 || _taxFreeAddresses[msg.sender] != 0 || to == owner()) {
+            return super.transfer(to, amount);
         }
 
         // if "to" != contract owner, see if they have an entry in rewards mapping
@@ -194,6 +150,21 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
         }
         return false;
     }
+    /**
+     * @notice Does a tax-free transfer of ADAMS
+     * @dev Is currently used to transfer coins to vault and staking contracts, might be used for other things in the future.
+     */
+    function taxFreeTransfer(address destination, uint amount) public onlyOwner() {
+        super.transfer(destination, amount);
+    }
+
+    /**
+     * @notice Whitelists an address to make tax-free transfers
+     * @dev Is currently used to aid in adding liquidity to the swap contract, might be used for other things in the future.
+     */
+    function addTaxFreeActor(address taxFreeAddress) public onlyOwner() {
+        _taxFreeAddresses[taxFreeAddress] = 42;
+    }
 
     /**
      * @dev Adds newHolder to the array of holders.
@@ -202,14 +173,8 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * @param newHolder The address to add.
      */
     function _checkAndAddToHolderArray(address newHolder) private {
-        // QUESTION
-        // I'm not sure which of these two lines is the best way
-        // my guess is using require, but not sure if require is
-        // generally used with private functions?
-        // if(newHolder == owner) return;
-        // or should it be an assert? 
-        require(newHolder != owner() );
-        
+        if(newHolder == owner()) return;
+   
         // QUESTION
         // Is constantly iterating over this array to see if it contains a value
         // going to eat lots of gas? Should I instead just keep a mapping of
@@ -228,6 +193,9 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * is "what random thing might happen to me today?"
      */
     function _distributeTax(uint taxAmount, address to) internal {
+        // transfer the tax to (this) so we have it to distribute later
+        super.transfer(address(this), taxAmount);
+
         // for the corner case when _totalCirculation == 0, we give tax to msg.sender
         if(_totalCirculation == 0) {
             _rewards[to] =  _rewards[to].add(taxAmount);
@@ -339,7 +307,6 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * hate on the weird code that seems repetitive, at least it's free.
      */
     function getAllAvailableRewards() public view returns (address[] memory addresses, uint256[] memory rewards) {
-        console.log("getAllAvailableRewards");
         // first find out how many addresses have rewards available for claiming
         uint256 rewardsCount = 0;
         for(uint i=0; i<_nonOwnerHolders.length; i++) {
@@ -364,8 +331,14 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
         // no need to return as we specify variable names in returns above
     }
 
+    // for testing
+    function getNonOwnerHolders() public view returns(address[] memory) {
+        return _nonOwnerHolders;
+    }
+
     /**
      * @dev Returns a psuedo-random number between 1 and max. 
+     * YES, I know it's not totally random :)
      */
     function _random(uint max) private returns (uint) {
         _nonce++;

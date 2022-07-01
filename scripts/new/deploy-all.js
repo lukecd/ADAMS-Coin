@@ -25,16 +25,20 @@ const main = async () => {
     await adamsSwap.deployed();
     console.log("AdamsSwap deployed to:", adamsSwap.address);  
   
-    await adamsCoin.connect(owner).setVaultAddress(adamsVault.address);
-    console.log("Vault address set inside AdamsCoin");
-    await adamsCoin.connect(owner).setStakingAddress(adamsStaking.address);
-    console.log("Staking address set inside AdamsCoin");
-    await adamsCoin.connect(owner).setSwapAddress(adamsSwap.address);
-    console.log("Swap address set inside AdamsCoin");
+    await adamsCoin.connect(owner).addTaxFreeActor(adamsSwap.address);
+    await adamsCoin.connect(owner).addTaxFreeActor(adamsStaking.address);
+    console.log("Swap / Staking address whitelisted for tax free status");
   
     // transfer 1,000,000 tokens to the vault contract
-    adamsCoin.connect(owner).approve(adamsVault.address, amountToTransfer);
-    adamsVault.connect(owner).deposit(amountToTransfer);
+    adamsCoin.connect(owner).taxFreeTransfer(adamsVault.address, amountToTransfer);
+  
+    // check that the vault now has 1,000,000 tokens
+    let balance = await adamsCoin.connect(owner).balanceOf(adamsVault.address);
+    balance = hre.ethers.utils.formatEther(balance);
+    console.log(`Vault ${adamsVault.address} has ${balance} ADAMS Coins`);
+
+    // transfer 1,000,000 tokens to the staking contract
+    await adamsCoin.connect(owner).taxFreeTransfer(adamsStaking.address, amountToTransfer);
   
     // check that the vault now has 1,000,000 tokens
     let vaultBalance = await adamsCoin.connect(owner).balanceOf(adamsVault.address);
@@ -42,9 +46,9 @@ const main = async () => {
     console.log(`Vault ${adamsVault.address} has ${vaultBalance} ADAMS Coins`);
   
     // add liquidity to the swap
-    // 1000 ADAMS and .01 GOR
+    // 10,000 ADAMS and .01 GOR
     // I need to figure out how to get more GOR so I can have lots of liquidity
-    amountToTransfer = hre.ethers.utils.parseEther("1000");
+    amountToTransfer = hre.ethers.utils.parseEther("10000");
     await adamsCoin.connect(owner).approve(adamsSwap.address, amountToTransfer);
     await adamsSwap.addLiquidity(amountToTransfer, { value: ethers.utils.parseEther(".01") });
     console.log("added liquidity");

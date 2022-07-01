@@ -15,14 +15,15 @@ const main = async () => {
     await adamsStaking.deployed();
     console.log("AdamsStaking deployed to:", adamsStaking.address);  
 
+    await adamsCoin.connect(owner).addTaxFreeActor(adamsStaking.address);
+
     // set contract address and transfer amountToTransfer ADAMS to staking contract
-    await adamsCoin.connect(owner).setStakingAddress(adamsStaking.address);
-    await adamsCoin.connect(owner).transfer(adamsStaking.address, amountToTransfer);
+    await adamsCoin.connect(owner).taxFreeTransfer(adamsStaking.address, amountToTransfer);
 
     // give each staker some money
     for(let i=0; i<stakers.length; i++) {
         console.log(`Transferring ${amountToTransfer} to ${stakers[i].address}`);  
-        await adamsCoin.connect(owner).transfer(stakers[i].address, amountToTransfer);
+        await adamsCoin.connect(owner).taxFreeTransfer(stakers[i].address, amountToTransfer);
     }
     console.log("Transferred ADAMS to all");  
 
@@ -46,7 +47,7 @@ const main = async () => {
     for(let i=0; i<stakers.length; i++) {
         let amountStaked = await adamsStaking.connect(stakers[i]).getAmountStaked();
         amountStaked = hre.ethers.utils.formatEther(amountStaked);
-        console.log(`${stakers[i].address} staked ${amountStaked}`);
+        console.log(`${stakers[i].address} staked ${amountStaked} (per contract)`);
     }  
 
     // check totals, make them easy to read too
@@ -57,10 +58,10 @@ const main = async () => {
     console.log('Are they equal ', (contractStaked == totalStaked))
 
     // now backdate all deposits 1 year    
-    for(let i=0; i<stakers.length; i++) {
-        await adamsStaking.connect(owner).backdateStartTimeOneYear(stakers[i].address);
-    }
-    console.log("Deposits backdated");
+    // for(let i=0; i<stakers.length; i++) {
+    //     await adamsStaking.connect(owner).backdateStartTimeOneYear(stakers[i].address);
+    // }
+    // console.log("Deposits backdated");
     
     // // check how much each is owed    
     let contractDebt = 0;
@@ -92,6 +93,13 @@ const main = async () => {
     contractStaked = await adamsStaking.connect(owner).getTotalStaked();
     contractStaked = hre.ethers.utils.formatEther(contractStaked);
     console.log("AFTER WITHDRAW totalStaked ", contractStaked);
+
+    // query the contract and getAmountStaked for each
+    for(let i=0; i<stakers.length; i++) {
+        let amountStaked = await adamsStaking.connect(stakers[i]).getAmountStaked();
+        amountStaked = hre.ethers.utils.formatEther(amountStaked);
+        console.log(`${stakers[i].address} staked ${amountStaked} (per contract)`);
+    }  
 }
 
 main()

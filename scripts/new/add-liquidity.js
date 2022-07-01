@@ -9,9 +9,9 @@ async function main() {
   let provider = ethers.provider;
   let amountToTransfer = hre.ethers.utils.parseEther("1000000");
   
-  const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0xb37C634bB7877Ce22c729Ff37075Eb18F42879f9');
+  const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '');
   console.log("AdamsCoin connected to:", adamsCoin.address);
-  const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0xC2A2150219148bC394cAA81Dc3e1e80e20c116Bc');
+  const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '');
   console.log("AdamsSwap connected to:", adamsSwap.address);
 
   // add liquidity to the swap

@@ -12,8 +12,7 @@ const main = async () => {
     await adamsStaking.deployed();
     console.log("AdamsStaking deployed to:", adamsStaking.address);  
 
-    await adamsCoin.connect(owner).setStakingAddress(adamsStaking.address);
-    await adamsCoin.connect(owner).transfer(adamsStaking.address, amountToTransfer);
+    await adamsCoin.connect(owner).taxFreeTransfer(adamsStaking.address, amountToTransfer);
 }
 
 main()
