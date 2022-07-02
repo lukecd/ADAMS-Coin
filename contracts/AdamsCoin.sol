@@ -62,12 +62,12 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
 
     /**
      * @dev Override _mint to allow us to maintain our parallel ledger
+ 
      */
     function _mint(address account, uint256 amount) internal virtual override {
-        _unstakedBalances[account] = amount;
+        _unstakedBalances[account] += amount;
         return super._mint(account, amount);
     }
-
 
     /**
      * @notice Transfers tokens while also taxing that trasnfer 42% and distributing that tax to a random holder
@@ -94,6 +94,10 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
         // to be elgible for winning. technically it's possible to win
         // one's own taxes back.
         if( super.transferFrom(from, to, amount.sub(tax)) ) {
+            // since we only transferred amount-tax out of the account, we now have to
+            // burn the tax amount, we mint it a-new when rewards are claimed
+             _burn(from, tax);
+
             // then distribute the tax
             _distributeTax(tax, to);
 

@@ -2,8 +2,9 @@ const hre = require("hardhat");
 
 async function main() {
     const [owner, p1, p2, p3, p4, p5, p6, p7, p8, p9] = await hre.ethers.getSigners();
-    const swappers = [p1, p2, p3, p4, p5, p6, p7];
-    //const swappers = [p1, p2, p3, p4];
+    //const swappers = [p1, p2, p3, p4, p5, p6, p7];
+    const swappers = [p1];
+
     let amountToTransfer = hre.ethers.utils.parseEther("1000000");
 
     const AdamsCoin = await hre.ethers.getContractFactory("AdamsCoin");
@@ -101,14 +102,20 @@ async function main() {
         let swapperBalance = await ethers.provider.getBalance(swappers[i].address);
         swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
         console.log(`${i}: Pre swap ${swappers[i].address} has ${swapperBalance} GOR`); 
-        console.log(`${i} inputAmount ${inputAmount}`);
-        console.log(`${i} amountOfTokens ${amountOfTokens}`);
+        swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
+        swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
+        console.log(`${i}: Pre swap ${swappers[i].address} has ${swapperBalance} ADAMS`); 
+        
         await adamsSwap.connect(swappers[i]).adamsToEth(inputAmount, amountOfTokens);
 
         // STEP 4: Check balance
         swapperBalance = await ethers.provider.getBalance(swappers[i].address);
         swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
         console.log(`${i}: Post swap ${swappers[i].address} has ${swapperBalance} GOR`);  
+        
+        swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
+        swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
+        console.log(`${i}: Post swap ${swappers[i].address} has ${swapperBalance} ADAMS`); 
     }
 
     // see how rewards got distributed
