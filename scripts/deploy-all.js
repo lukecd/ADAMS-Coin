@@ -46,11 +46,10 @@ const main = async () => {
     console.log(`Vault ${adamsVault.address} has ${vaultBalance} ADAMS Coins`);
   
     // add liquidity to the swap
-    // 10,000 ADAMS and .01 GOR
-    // I need to figure out how to get more GOR so I can have lots of liquidity
-    amountToTransfer = hre.ethers.utils.parseEther("10000");
+    // 900,000 ADAMS and 9 GOR
+    amountToTransfer = hre.ethers.utils.parseEther("900000");
     await adamsCoin.connect(owner).approve(adamsSwap.address, amountToTransfer);
-    await adamsSwap.addLiquidity(amountToTransfer, { value: ethers.utils.parseEther(".01") });
+    await adamsSwap.addLiquidity(amountToTransfer, { value: ethers.utils.parseEther("9.0") });
     console.log("added liquidity");
   
     let swapBalance = await adamsCoin.connect(owner).balanceOf(adamsSwap.address);

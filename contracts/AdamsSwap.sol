@@ -33,18 +33,18 @@ import "hardhat/console.sol";
  *
  */
  contract AdamsSwap is ERC20 {
-    address public token0;
+    AdamsCoin public immutable token;
     
     constructor(address adamsCoinAddress) ERC20("AdamsCoin LP Token", "ADLP") {
         require(adamsCoinAddress != address(0), "Token address passed is a null address");
-        token0 = adamsCoinAddress;
+        token = AdamsCoin(adamsCoinAddress);
     }
 
     /**
     * @notice Returns the amount AdamsCoin tokens held by the contract
     */
     function getReserve() public view returns (uint) {
-        return ERC20(token0).balanceOf(address(this));
+        return token.balanceOf(address(this));
     }
 
 
@@ -57,11 +57,11 @@ import "hardhat/console.sol";
         uint liquidity;
         uint ethBalance = address(this).balance;
         uint adamsReserve = getReserve();
-        ERC20 adamsToken = ERC20(token0);
+
         // this case only happens when the swap contract is empty
         if(adamsReserve == 0) {
             // transfer ADAMS ... this transfer will be taxed!
-            adamsToken.transferFrom(msg.sender, address(this), amount);
+            token.transferFrom(msg.sender, address(this), amount);
             // mint LP tokens
             liquidity = ethBalance;
             _mint(msg.sender, liquidity);
@@ -77,7 +77,7 @@ import "hardhat/console.sol";
             require(amount >= adamsTokenAmount, "Amount of tokens sent is less than the minimum tokens required");
             // transfer only (cryptoDevTokenAmount user can add) amount of `Crypto Dev tokens` from users account
             // to the contract
-            adamsToken.transferFrom(msg.sender, address(this), adamsTokenAmount);
+            token.transferFrom(msg.sender, address(this), adamsTokenAmount);
             // The amount of LP tokens that would be sent to the user should be propotional to the liquidity of
             // ether added by the user
             // Ratio here to be maintained is ->
@@ -118,7 +118,7 @@ import "hardhat/console.sol";
         // Transfer `ethAmount` of Eth from user's wallet to the contract
         payable(msg.sender).transfer(ethAmount);
         // Transfer `adamsTokenAmount` of Crypto Dev tokens from the user's wallet to the contract
-        ERC20(token0).transfer(msg.sender, adamsTokenAmount);
+        token.transfer(msg.sender, adamsTokenAmount);
         return (ethAmount, adamsTokenAmount);
     }
 
@@ -164,8 +164,8 @@ import "hardhat/console.sol";
         );
 
         require(tokensBought >= minTokens, "insufficient output amount");
-        // Transfer the `Crypto Dev` tokens to the user
-        ERC20(token0).transfer(msg.sender, tokensBought);
+        // Transfer the ADAMS tokens to the user
+        token.transfer(msg.sender, tokensBought);
     }
 
     /** 
@@ -181,7 +181,7 @@ import "hardhat/console.sol";
         
         require(ethBought >= minEth, "insufficient output amount");
         // Transfer ADAMS tokens from the user's address to the contract
-        ERC20(token0).transferFrom(msg.sender, address(this), adamsSold);
+        token.transferFrom(msg.sender, address(this), adamsSold);
         // send the `ethBought` to the user from the contract
         payable(msg.sender).transfer(ethBought);
     }

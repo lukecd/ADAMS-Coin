@@ -8,9 +8,9 @@ async function main() {
   const [owner] = await hre.ethers.getSigners();
   let provider = ethers.provider;
   
-  const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0x01F52Af3f5a43125ef866af37530da2FBBFA9437');
+  const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0xA8760D4EB93b90FE0122A9153BA25D588A742032');
   console.log("AdamsSwap connected to:", adamsSwap.address);
-  const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0x8E8F24eCB0e9337e91C5724093F351B345699b73');
+  const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0x20a75Cf5781B2ef4bbc9cB34DE5ad8556A265B76');
   console.log("AdamsCoin connected to:", adamsCoin.address);
 
   let swapBalance = await adamsCoin.connect(owner).balanceOf(adamsSwap.address);
