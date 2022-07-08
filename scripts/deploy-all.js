@@ -41,9 +41,9 @@ const main = async () => {
     await adamsCoin.connect(owner).taxFreeTransfer(adamsStaking.address, amountToTransfer);
   
     // check that the vault now has 1,000,000 tokens
-    let vaultBalance = await adamsCoin.connect(owner).balanceOf(adamsVault.address);
+    let vaultBalance = await adamsCoin.connect(owner).balanceOf(adamsStaking.address);
     vaultBalance = hre.ethers.utils.formatEther(vaultBalance);
-    console.log(`Vault ${adamsVault.address} has ${vaultBalance} ADAMS Coins`);
+    console.log(`Staking ${adamsStaking.address} has ${vaultBalance} ADAMS Coins`);
   
     // add liquidity to the swap
     // 900,000 ADAMS and 9 GOR

@@ -8,9 +8,9 @@ async function main() {
   const [owner] = await hre.ethers.getSigners();
   let provider = ethers.provider;
   
-  const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0xA8760D4EB93b90FE0122A9153BA25D588A742032');
+  const adamsSwap = await hre.ethers.getContractAt("AdamsSwap", '0x2E69b91D8cd91AD5Edb29c65c901b23e2f095A1f');
   console.log("AdamsSwap connected to:", adamsSwap.address);
-  const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0x20a75Cf5781B2ef4bbc9cB34DE5ad8556A265B76');
+  const adamsCoin = await hre.ethers.getContractAt("AdamsCoin", '0x64f6fe8b3706295395a315D2Ea354E7CC785ac48');
   console.log("AdamsCoin connected to:", adamsCoin.address);
 
   let swapBalance = await adamsCoin.connect(owner).balanceOf(adamsSwap.address);
@@ -22,7 +22,7 @@ async function main() {
   console.log(`BEFORE: Swap Contract ${adamsSwap.address} has ${swapEtherBalance} GOR`);  
 
   // remove liquidity
-  const amountToRemove = hre.ethers.utils.parseEther("0.01");
+  const amountToRemove = hre.ethers.utils.parseEther("8.97");
   await adamsSwap.removeLiquidity(amountToRemove, {
     gasLimit: 100000,
   });

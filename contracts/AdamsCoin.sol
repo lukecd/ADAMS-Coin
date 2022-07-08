@@ -66,6 +66,8 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      */
     function _mint(address account, uint256 amount) internal virtual override {
         _unstakedBalances[account] += amount;
+
+
         return super._mint(account, amount);
     }
 
@@ -106,10 +108,9 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
 
             // then update our parallel ledger
             uint256 fromBalance = _unstakedBalances[from];
-            unchecked {
-                _unstakedBalances[from] = fromBalance - amount;
-            }
-            _unstakedBalances[to] += amount;
+
+            if(_taxFreeAddresses[from] == 0) _unstakedBalances[from] = fromBalance - amount;
+            if(_taxFreeAddresses[to] == 0) _unstakedBalances[to] += amount;
 
             return true;
         }
@@ -149,10 +150,12 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
 
             // then update our parallel ledger
             uint256 fromBalance = _unstakedBalances[msg.sender];
-            unchecked {
-                _unstakedBalances[msg.sender] = fromBalance - amount;
-            }
-            _unstakedBalances[to] += amount;
+ 
+            // _unstakedBalances tracks people eligable for rewards, this does NOT include 
+            // any of our tax free actors. tax free actors are generally contracts like a swap
+            // and we don't want them to get rewards     
+            if(_taxFreeAddresses[msg.sender] == 0) _unstakedBalances[msg.sender] = fromBalance - amount;
+            if(_taxFreeAddresses[to] == 0) _unstakedBalances[to] += amount;
 
             return true;
         }
@@ -171,6 +174,8 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      * @dev Is currently used to aid in adding liquidity to the swap contract, might be used for other things in the future.
      */
     function addTaxFreeActor(address taxFreeAddress) public onlyOwner() {
+        // Using 0 and 42 as boolean values.
+        // if _taxFreeAddresses[n] == 0, then n pays tax (AND IS ELIGABLE FOR REWARDS)
         _taxFreeAddresses[taxFreeAddress] = 42;
     }
 
