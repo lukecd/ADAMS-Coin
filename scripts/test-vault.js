@@ -15,6 +15,11 @@ const main = async () => {
     await adamsVault.deployed();
     console.log("AdamsVault deployed to:", adamsVault.address);  
   
+    await adamsCoin.connect(owner).addTaxFreeActor(adamsVault.address);
+    await adamsCoin.connect(owner).blacklistFromRewards(adamsVault.address);
+
+    console.log("Vault Whitelisted & blaclisted from rewards");
+
     // transfer 1,000,000 tokens to the vault contract
     await adamsCoin.connect(owner).taxFreeTransfer(adamsVault.address, amountToTransfer);
     console.log("AdamsVault Transferred Coins");  

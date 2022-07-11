@@ -67,9 +67,11 @@ contract AdamsVault is Ownable {
         require(balance > 0, "Hey, I'm out of ADAMS now, sorry. Can you come back later?:(");
 
         // 724137931 / 6000
+        //transferRecipients[msg.sender] = 4200;
+        //token.transfer(msg.sender, 4200 * (10 ** 18));
         transferRecipients[msg.sender] = (724137932 / 100000) * (10 ** 18);
-        //token.transferFrom(address(this), msg.sender, 4200);
         token.transfer(msg.sender, (724137932 / 100000) * (10 ** 18));
+        
         // send an event 
         emit VaultDistribution(msg.sender, 4200);
     }

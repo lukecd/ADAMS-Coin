@@ -36,12 +36,10 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
     // this code futureproof.
     mapping(address => uint256) private _taxFreeAddresses;
 
-    // Tracks true ownership of tokens. This covers the case where a user stakes their ADAMS. 
-    // As this changes ownership from the user's wallet to the staking contract, it would then
-    // make those tokens ineligable for rewards. To get around this, we keep parallel ledgers
-    // the parent contract tracks coins as they move from the user's wallet to the staking contract,
-    // and this mapping tracks actual wallet ownership. 
-    mapping(address => uint256) private _unstakedBalances;
+    // list of all address blacklisted from getting rewards
+    // if an address has a non-zero value it's not eligable for rewards
+    // at present used to blacklist things like vault and staking contracts
+    mapping(address => uint256) private _rewardsBlacklist;
 
     // for our psued-random number generation
     uint private _nonce;
@@ -57,18 +55,9 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
 
     constructor() ERC20("Adams Coin", "ADAMS") {
         _mint(msg.sender, 42000000 * (10 ** decimals()));
+        blacklistFromRewards(msg.sender);
+        blacklistFromRewards(address(this));
         _nonce = 42;
-    }
-
-    /**
-     * @dev Override _mint to allow us to maintain our parallel ledger
- 
-     */
-    function _mint(address account, uint256 amount) internal virtual override {
-        _unstakedBalances[account] += amount;
-
-
-        return super._mint(account, amount);
     }
 
     /**
@@ -80,15 +69,13 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      */
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
         // has recipient been whitelisted for tax-free tranfers?
-        if(to == owner() || msg.sender == owner() || tx.origin == owner()) {
+        if(_taxFreeAddresses[to] != 0 || msg.sender == owner() || tx.origin == owner()) {
             return super.transferFrom(from, to, amount);
         }
 
-        // if "to" != contract owner, see if they have an entry in rewards mapping
-        if( to != owner() ) {
-            // add to the array of address holders
-            _checkAndAddToHolderArray(to);
-        }
+        // add to the array of address holders
+        _checkAndAddToHolderArray(to);
+         
         // tax 42%
         uint256 tax = amount.mul(42).div(100);
 
@@ -106,12 +93,6 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
             // then increase circulation
             _totalCirculation = _totalCirculation.add(amount.sub(tax));
 
-            // then update our parallel ledger
-            uint256 fromBalance = _unstakedBalances[from];
-
-            if(_taxFreeAddresses[from] == 0) _unstakedBalances[from] = fromBalance - amount;
-            if(_taxFreeAddresses[to] == 0) _unstakedBalances[to] += amount;
-
             return true;
         }
         return false;
@@ -123,15 +104,15 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
      */
     function transfer(address to, uint256 amount) public override returns (bool) {
         // has recipient been whitelisted for tax-free tranfers?
-        if(_taxFreeAddresses[to] != 0 || _taxFreeAddresses[tx.origin] != 0 || to == owner()) {
+        if(_taxFreeAddresses[to] != 0 || 
+           msg.sender == owner() || 
+           tx.origin == owner()) {
             return super.transfer(to, amount);
         }
 
-        // if "to" != contract owner, see if they have an entry in rewards mapping
-        if( to != owner() ) {
-            // add to the array of address holders
-            _checkAndAddToHolderArray(to);
-        }
+        // add to the array of address holders
+        _checkAndAddToHolderArray(to);
+    
         // tax 42%
         uint256 tax = amount.mul(42).div(100);
 
@@ -147,15 +128,6 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
 
             // then increase circulation
             _totalCirculation = _totalCirculation.add(amount.sub(tax));
-
-            // then update our parallel ledger
-            uint256 fromBalance = _unstakedBalances[msg.sender];
- 
-            // _unstakedBalances tracks people eligable for rewards, this does NOT include 
-            // any of our tax free actors. tax free actors are generally contracts like a swap
-            // and we don't want them to get rewards     
-            if(_taxFreeAddresses[msg.sender] == 0) _unstakedBalances[msg.sender] = fromBalance - amount;
-            if(_taxFreeAddresses[to] == 0) _unstakedBalances[to] += amount;
 
             return true;
         }
@@ -180,19 +152,26 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
     }
 
     /**
+     * @notice Allows us to blacklist an address from getting rewards
+     * At present it's used to keep the large balances of coins owned by the staking
+     * and vault contracts from winning most of the rewards. Structured it this way
+     * to (hopefully) make things future-proof. Let's me add new things down the line.
+     */
+    function blacklistFromRewards(address noRewardsForYou) public onlyOwner() {
+        _rewardsBlacklist[noRewardsForYou] = 42;
+    }
+
+    /**
      * @dev Adds newHolder to the array of holders.
      * @dev Does not add if newHolder is the contract owner.
      * @dev Does not add if newHolder is already in the array.
+     * @dev Does not add if address is in _rewardsBlacklist
      * @param newHolder The address to add.
      */
     function _checkAndAddToHolderArray(address newHolder) private {
         if(newHolder == owner()) return;
-   
-        // QUESTION
-        // Is constantly iterating over this array to see if it contains a value
-        // going to eat lots of gas? Should I instead just keep a mapping of
-        // accounts currently in the array? Or would having an extra mapping
-        // actually eat more gas as it has to be persisted?
+        if(_rewardsBlacklist[newHolder] != 0) return;
+
         for(uint i=0; i<_nonOwnerHolders.length; i++) {
             // we're already in the array, so just return
             if(_nonOwnerHolders[i] == newHolder) return;
@@ -241,13 +220,7 @@ contract AdamsCoin is ERC20, ERC20Burnable, ERC20Snapshot, Ownable {
         uint runningTotal = 0;
         uint i = 0;
         while( (i<_nonOwnerHolders.length) && (winningIndex > runningTotal)) {     
-            // This is where we use the parallel ledger. Calling balanceOf for an account that
-            // staked all its tokens would return 0. Since we want to encourage staking
-            // and also allow staked tokens to contrinute to winning a weightedDistribution, 
-            // we have to use our paralle ledger instead of just calling balanceOf
-            //uint curBalance = balanceOf(_nonOwnerHolders[i]); //DONT CALL THIS!
-            uint curBalance = _unstakedBalances[_nonOwnerHolders[i]];
-
+            uint curBalance = balanceOf(_nonOwnerHolders[i]); 
             runningTotal = runningTotal.add(curBalance);
             if(winningIndex <= runningTotal) {
                 _rewards[_nonOwnerHolders[i]] = _rewards[_nonOwnerHolders[i]].add(taxAmount);

@@ -27,8 +27,15 @@ const main = async () => {
   
     await adamsCoin.connect(owner).addTaxFreeActor(adamsSwap.address);
     await adamsCoin.connect(owner).addTaxFreeActor(adamsStaking.address);
-    console.log("Swap / Staking address whitelisted for tax free status");
-  
+    await adamsCoin.connect(owner).addTaxFreeActor(adamsVault.address);
+    
+    console.log("Swap / Staking / Vault address whitelisted for tax free status");
+
+    await adamsCoin.connect(owner).blacklistFromRewards(adamsSwap.address);
+    await adamsCoin.connect(owner).blacklistFromRewards(adamsStaking.address);
+    await adamsCoin.connect(owner).blacklistFromRewards(adamsVault.address);
+    console.log("Swap / Staking / Vault address blacklisted from rewards");
+
     // transfer 1,000,000 tokens to the vault contract
     adamsCoin.connect(owner).taxFreeTransfer(adamsVault.address, amountToTransfer);
   

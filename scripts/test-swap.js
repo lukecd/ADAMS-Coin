@@ -2,8 +2,8 @@ const hre = require("hardhat");
 
 async function main() {
     const [owner, p1, p2, p3, p4, p5, p6, p7, p8, p9] = await hre.ethers.getSigners();
-    //const swappers = [p1, p2, p3, p4, p5, p6, p7];
-    const swappers = [p1];
+    const swappers = [p1, p2, p3, p4, p5, p6, p7];
+    //const swappers = [p1];
 
     let amountToTransfer = hre.ethers.utils.parseEther("1000000");
 
@@ -19,7 +19,8 @@ async function main() {
 
     // whitelist for tax free status
     await adamsCoin.connect(owner).addTaxFreeActor(adamsSwap.address);
-    console.log("Swap address whitelisted for tax free status");
+    await adamsCoin.connect(owner).blacklistFromRewards(adamsSwap.address);
+    console.log("Swap address whitelisted for tax free status & blaclisted from rewards");
 
     // approve 
     await adamsCoin.approve(adamsCoin.address, ethers.constants.MaxUint256);
@@ -52,12 +53,16 @@ async function main() {
         let inputAmountFormatted = hre.ethers.utils.formatEther(inputAmount);
         let amountOfTokensFormatted = hre.ethers.utils.formatEther(amountOfTokens);
         console.log(`${i}: Swapping ${inputAmountFormatted} GOR will get you ${amountOfTokensFormatted} ADAMS`);  
-    
+ 
+        let swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
+        swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
+        console.log(`${i}: Pre swap ${swappers[i].address} has ${swapperBalance} ADAMS`);
+
         // STEP 2: SWAP
         await adamsSwap.connect(swappers[i]).ethToAdams(amountOfTokens, { value: ethers.utils.parseEther("1") });
 
         // STEP 3: Check balance
-        let swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
+        swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
         swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
         console.log(`${i}: Post swap ${swappers[i].address} has ${swapperBalance} ADAMS`);
     }
@@ -138,9 +143,11 @@ async function main() {
     }
 
     console.log("\n\n\n********************** CLAIM REWARDS ******************************");
+
     for(let i=0; i<swappers.length; i++) {
       if(checkContains(addresses, swappers[i].address)) {
-        console.log(`claiming ${hre.ethers.utils.formatEther(rewards[i])} for ${swappers[i].address}`)
+        let rewardIndex = addresses.indexOf(swappers[i].address);
+        console.log(`claiming ${hre.ethers.utils.formatEther(rewards[rewardIndex])} for ${swappers[i].address}`)
         let swapperBalance = await adamsCoin.connect(owner).balanceOf(swappers[i].address);
         swapperBalance = hre.ethers.utils.formatEther(swapperBalance);
         console.log(`${i}: Pre claim ${swappers[i].address} has ${swapperBalance} ADAMS`);

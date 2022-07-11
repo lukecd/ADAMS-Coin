@@ -16,10 +16,8 @@ const main = async () => {
     console.log("AdamsStaking deployed to:", adamsStaking.address);  
 
     await adamsCoin.connect(owner).addTaxFreeActor(adamsStaking.address);
-    console.log("added tax free actor ", adamsStaking.address);
-
-    // set contract address and transfer amountToTransfer ADAMS to staking contract
-    await adamsCoin.connect(owner).taxFreeTransfer(adamsStaking.address, amountToTransfer);
+    await adamsCoin.connect(owner).blacklistFromRewards(adamsStaking.address);
+    console.log("added tax free actor & blacklisted from rewards ", adamsStaking.address);
 
     // give each staker some money
     for(let i=0; i<stakers.length; i++) {
